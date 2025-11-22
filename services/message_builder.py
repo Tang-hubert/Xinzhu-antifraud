@@ -20,7 +20,7 @@ STYLE_CONFIG = {
     }
 }
 
-def create_fraud_check_flex(model_data: pandas.DataFrame, gemini_text):
+def create_fraud_check_flex(model_data: pandas.DataFrame, gemini_text, target_url):
     """
     根據模型資料生成 Flex Message
     """
@@ -29,7 +29,7 @@ def create_fraud_check_flex(model_data: pandas.DataFrame, gemini_text):
     is_fraud = model_data['is_fraud'][0]
     risk_level = model_data["risk_level"][0]
     confidence_score = model_data["confidence_score"][0]
-    gemini_text = model_data.get("gemini_output", "無分析資料")
+    gemini_caption = gemini_text
 
     # 2. 決定顯示風格 (Safe / Warning / Danger)
     # 這裡可以根據你的業務邏輯調整，例如 risk_level == 'Medium' 走 WARNING
@@ -55,7 +55,8 @@ def create_fraud_check_flex(model_data: pandas.DataFrame, gemini_text):
                                    .replace("{STATUS_TITLE}", style["title"]) \
                                    .replace("{RISK_LEVEL_TEXT}", style["risk_text"]) \
                                    .replace("{SCORE_PERCENT}", score_percent) \
-                                   .replace("{GEMINI_TEXT}", gemini_text)
+                                   .replace("{GEMINI_TEXT}", gemini_caption) \
+                                   .replace("{JOB_URL}", target_url), 
         
         # 轉回 JSON 物件
         flex_bubble = json.loads(rendered_str)

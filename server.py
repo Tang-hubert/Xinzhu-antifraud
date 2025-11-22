@@ -104,7 +104,7 @@ def handle_message(event):
         predict_risk = predictor.predict_csv(job_data)
 
         # 3. 建立 Flex Message
-        flex_payload = create_fraud_check_flex(predict_risk, gemini_text)
+        flex_payload = create_fraud_check_flex(predict_risk, gemini_text, target_url)
         
         if flex_payload:
             line_bot_api.reply_message(

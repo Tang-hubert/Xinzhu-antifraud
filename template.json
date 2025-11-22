@@ -98,8 +98,8 @@
         "type": "button",
         "action": {
           "type": "uri",
-          "label": "分享檢測結果",
-          "uri": "https://line.me/"
+          "label": "分享檢測工具",
+          "uri": "{JOB_URL}"
         },
         "style": "secondary",
         "color": "{THEME_COLOR}"
