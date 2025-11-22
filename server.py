@@ -11,7 +11,6 @@ from services.predict import FraudPredictor
 from services.gemini_explain_risk import get_job_fraud_analysis
 from services.message_builder import create_fraud_check_flex
 
-from services.ui_renderer import create_risk_flex_message
 from utils import download_multiple
 from typing import cast
 import logging
@@ -107,19 +106,13 @@ def handle_message(event):
              line_bot_api.reply_message(event.reply_token, reply)
              return
         logger.info(f"Got job data for {target_url}")
-        # risk_result = analyze_risk(job_data)
-        predictor = cast(FraudPredictor, app.state.predictor)
 
         gemini_text = get_job_fraud_analysis(job_data.head(1)) 
 
         predictor = FraudPredictor()
         predict_risk = predictor.predict_csv(job_data)
-        reply_string = TextSendMessage(text="predict_risk")
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_string))
-        print("Prediction Result:")
-        print(predict_risk)
 
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=gemini_text))
+        # line_bot_api.reply_message(event.reply_token, TextSendMessage(text=gemini_text))
 
         flex_payload = create_fraud_check_flex(predict_risk, gemini_text)
         
