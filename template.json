@@ -1,0 +1,122 @@
+{
+  "type": "bubble",
+  "size": "kilo",
+  "header": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "連結檢測報告",
+        "color": "#FFFFFF",
+        "weight": "bold",
+        "size": "sm"
+      },
+      {
+        "type": "text",
+        "text": "{STATUS_TITLE}",
+        "color": "#FFFFFF",
+        "weight": "bold",
+        "size": "xxl",
+        "margin": "md"
+      }
+    ],
+    "backgroundColor": "{THEME_COLOR}",
+    "paddingAll": "20px"
+  },
+  "body": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "風險評估",
+        "weight": "bold",
+        "size": "sm",
+        "color": "#888888"
+      },
+      {
+        "type": "box",
+        "layout": "horizontal",
+        "contents": [
+          {
+            "type": "text",
+            "text": "{RISK_LEVEL_TEXT}",
+            "size": "xxl",
+            "weight": "bold",
+            "color": "{THEME_COLOR}",
+            "flex": 0
+          },
+          {
+            "type": "text",
+            "text": "詐騙機率 {SCORE_PERCENT}%",
+            "size": "xs",
+            "color": "#aaaaaa",
+            "gravity": "bottom",
+            "margin": "md"
+          }
+        ],
+        "margin": "sm"
+      },
+      {
+        "type": "separator",
+        "margin": "xl"
+      },
+      {
+        "type": "text",
+        "text": "AI 分析觀點",
+        "weight": "bold",
+        "size": "sm",
+        "color": "#888888",
+        "margin": "xl"
+      },
+      {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+          {
+            "type": "text",
+            "text": "{GEMINI_TEXT}",
+            "wrap": true,
+            "size": "sm",
+            "color": "#555555",
+            "lineSpacing": "4px"
+          }
+        ],
+        "backgroundColor": "#F7F9FA",
+        "cornerRadius": "8px",
+        "paddingAll": "12px",
+        "margin": "md"
+      }
+    ]
+  },
+  "footer": {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "button",
+        "action": {
+          "type": "uri",
+          "label": "分享檢測結果",
+          "uri": "https://line.me/"
+        },
+        "style": "secondary",
+        "color": "{THEME_COLOR}"
+      },
+      {
+        "type": "text",
+        "text": "本結果僅供參考，請保持警覺",
+        "size": "xxs",
+        "color": "#aaaaaa",
+        "align": "center",
+        "margin": "md"
+      }
+    ]
+  },
+  "styles": {
+    "footer": {
+      "separator": true
+    }
+  }
+}
