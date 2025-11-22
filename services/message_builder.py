@@ -56,7 +56,7 @@ def create_fraud_check_flex(model_data: pandas.DataFrame, gemini_text, target_ur
                                    .replace("{RISK_LEVEL_TEXT}", style["risk_text"]) \
                                    .replace("{SCORE_PERCENT}", score_percent) \
                                    .replace("{GEMINI_TEXT}", gemini_caption) \
-                                   .replace("{JOB_URL}", target_url), 
+                                   .replace("{JOB_URL}", target_url)
         
         # 轉回 JSON 物件
         flex_bubble = json.loads(rendered_str)

@@ -98,7 +98,7 @@
         "type": "button",
         "action": {
           "type": "uri",
-          "label": "分享檢測工具",
+          "label": "繼續瀏覽職缺",
           "uri": "{JOB_URL}"
         },
         "style": "secondary",
