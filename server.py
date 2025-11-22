@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 import re
+import os
 from fastapi import FastAPI, Request, HTTPException
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
@@ -21,19 +22,51 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 下載模型 & scaler
-    BUCKET = "hsinchu-hackerthon-storage"
-    FILES = ["model/fraud_detection_model.pth", "model/scaler.pkl"]
-    model_paths = download_multiple(BUCKET, FILES)
-
-    # 初始化 FraudPredictor
-    app.state.predictor = FraudPredictor(model_path="tmp/model/fraud_detection_model.pth", scaler_path="tmp/model/scaler.pkl")
-    logger.info("Init predictor")
-    yield  # app 進入運行階段
+    BUCKET_NAME = "hsinchu-hackerthon-storage"
     
-    # shutdown 可釋放資源
+    # 定義 GCS 上的來源路徑 (這就是您原本的 FILES)
+    # 假設 Bucket 裡面的結構是:
+    # hsinchu-hackerthon-storage/model/fraud_detection_model.pth
+    FILES_SOURCE = ["model/fraud_detection_model.pth", "model/scaler.pkl"]
+
+    # 定義 Cloud Run 容器內的目標路徑 (必須在 /tmp 下)
+    # 我們要把檔案存成:
+    # /tmp/model/fraud_detection_model.pth
+    # /tmp/model/scaler.pkl
+    
+    # 1. 先建立本地資料夾 (非常重要，否則下載會報錯 FileNotFoundError)
+    os.makedirs("/tmp/model", exist_ok=True)
+
+    # 2. 執行下載
+    # 注意：這裡假設您的 download_multiple 可能需要修改，
+    # 或者我們直接在這裡用 google-cloud-storage 套件寫一個簡單的迴圈比較保險
+    from google.cloud import storage
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(BUCKET_NAME)
+
+    logger.info("Start downloading models to /tmp...")
+    
+    for blob_name in FILES_SOURCE:
+        blob = bucket.blob(blob_name)
+        # 組合本地絕對路徑: /tmp/ + blob_name
+        destination_filename = f"/tmp/{blob_name}"
+        
+        logger.info(f"Downloading {blob_name} to {destination_filename}...")
+        blob.download_to_filename(destination_filename)
+
+    logger.info("Download finished.")
+
+    # 3. 初始化 Predictor，使用 /tmp 下的路徑
+    # 這裡要對應上面下載的 destination_filename
+    app.state.predictor = FraudPredictor(
+        model_path="/tmp/model/fraud_detection_model.pth", 
+        scaler_path="/tmp/model/scaler.pkl"
+    )
+    
+    logger.info("Init predictor success")
+    yield  # 服務開始運行
+    
     del app.state.predictor
-    print("Predictor resources cleaned up.")
     logger.info("Terminated")
     
 app = FastAPI(title="Job Scam Detector", lifespan=lifespan)
