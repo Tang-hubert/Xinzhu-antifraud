@@ -10,7 +10,7 @@ from services.process_job_link import process_job_url
 from services.predict import FraudPredictor
 from services.gemini_explain_risk import get_job_fraud_analysis
 from services.message_builder import create_fraud_check_flex
-
+from scrape_threads_link import scrape_threads_from_inputs
 # 移除 utils 的引用，直接在 lifespan 處理，避免 utils 裡面有額外依賴導致報錯
 # from utils import download_multiple 
 from typing import cast
@@ -81,42 +81,64 @@ async def webhook(request: Request):
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     user_text = event.message.text.strip()
-    url_pattern = r'https?://www\.104\.com\.tw/job/[a-zA-Z0-9]+'
-    match = re.search(url_pattern, user_text)
 
-    if match:
-        target_url = match.group(0)
-        logger.info(f"Searching job info for target_url: {target_url}")
-        job_data = process_job_url(target_url)
-        
-        if job_data.empty:
-             reply = TextSendMessage(text="❌ 無法讀取職缺資料，請確認該職缺是否已下架。")
-             line_bot_api.reply_message(event.reply_token, reply)
-             return
-        logger.info(f"Got job data for {target_url}")
+    url_pattern_104 = r'https?://www\.104\.com\.tw/job/[a-zA-Z0-9]+'
+    match_104 = re.search(url_pattern_104, user_text)
 
-        # 1. 取得 Gemini 分析
-        gemini_text = get_job_fraud_analysis(job_data.head(1)) 
+    url_pattern_threads = r'https?://www\.threads\.com/@[a-zA-Z0-9_.-]/post/[a-zA-Z0-9]+'
+    match_threads = re.search(url_pattern_threads, user_text)
 
-        # 2. 使用 lifespan 初始化好的 predictor (修正重點！)
-        # 不要 new FraudPredictor()，而是用 app.state.predictor
-        predictor = cast(FraudPredictor, app.state.predictor)
-        predict_risk = predictor.predict_csv(job_data)
+    if match_104 or match_threads:
+        if match_104:
+            search_104(event, match_104)
+        elif match_threads:
+            search_threads(event, match_threads, url=user_text)
 
-        # 3. 建立 Flex Message
-        flex_payload = create_fraud_check_flex(predict_risk, gemini_text, target_url)
-        
-        if flex_payload:
-            line_bot_api.reply_message(
-                event.reply_token,
-                FlexSendMessage(
-                    alt_text=flex_payload["altText"],
-                    contents=flex_payload["contents"]
-                )
+def search_104(event, match: re.Match[str]):
+    target_url = match.group(0)
+    logger.info(f"Searching job info for target_url: {target_url}")
+    job_data = process_job_url(target_url)
+    
+    if job_data.empty:
+         reply = TextSendMessage(text="❌ 無法讀取職缺資料，請確認該職缺是否已下架。")
+         line_bot_api.reply_message(event.reply_token, reply)
+         return
+    logger.info(f"Got job data for {target_url}")
+
+    # 1. 取得 Gemini 分析
+    gemini_text = get_job_fraud_analysis(job_data.head(1)) 
+
+    # 2. 使用 lifespan 初始化好的 predictor (修正重點！)
+    # 不要 new FraudPredictor()，而是用 app.state.predictor
+    predictor = cast(FraudPredictor, app.state.predictor)
+    predict_risk = predictor.predict_csv(job_data)
+
+    # 3. 建立 Flex Message
+    flex_payload = create_fraud_check_flex(predict_risk, gemini_text, target_url)
+    
+    if flex_payload:
+        line_bot_api.reply_message(
+            event.reply_token,
+            FlexSendMessage(
+                alt_text=flex_payload["altText"],
+                contents=flex_payload["contents"]
             )
+        )
     else:
         reply_text = "請貼上 104 職缺連結 (例如: https://www.104.com.tw/job/xxxxx)，我會幫您分析風險。"
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+
+def search_threads(event, match: re.Match[str], url):
+    outputs = scrape_threads_from_inputs([url])
+    if outputs:
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text=outputs[0]["fraud_analysis"])
+        )
+    else:
+        reply_text = "請貼上 threads 連結 (例如: https://www.threads.com/post/xxxxx)，我會幫您分析風險。"
+        line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_text))
+    pass
 
 if __name__ == "__main__":
     import uvicorn
