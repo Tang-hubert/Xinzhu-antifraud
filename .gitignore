@@ -6,3 +6,4 @@ data.json
 model
 test.py
 *.csv
+threads_result_*.json
